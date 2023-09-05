@@ -93,8 +93,9 @@ class PositionalEncoding(nn.Module):
         pe[:,1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(0,1)
         self.register_buffer('pe',pe)
+        self.scale = math.sqrt(d_model) # Normalization
     def forward(self, x):
-        x = x + self.pe[:x.size(0), :]
+        x = x + self.pe[:x.size(0), :] * self.scale
         return self.dropout(x)
 
 # Defining Transformer Model
@@ -114,7 +115,6 @@ class TransformerModel(nn.Module):
         mask = (torch.triu(torch.ones(sz, sz))==1).transpose(0,1)
         mask = mask.float().masked_fill(mask == False,float('-inf')).masked_fill(mask == True,float(0.0))
         return mask
-    #I remember this. Its the forward pass.
     def forward(self, x):
         if self.src_mask is None or self.src_mask.size(0) != x.size(0):
             device=x.device
