@@ -13,15 +13,16 @@ device = torch.device('cpu')
 print(f'Vocab size: {len(vocab)}')
 
 # Load Model Architecture
-model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=2, nlayers=5,device = device)
-VIKTOR = 'Viktor_epoch_120.pth'
+model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=2, nlayers=5,device = device) # Make sure these fit the args at preprocess_and_training.py
+VIKTOR = 'Viktor_epoch_120.pth' #Set the model name or the path
 #Load the saved parameters
 model.load_state_dict(torch.load(VIKTOR, map_location=device))
 #No idea why I need this below or why it needs to be inverse, but the predicted_words need it
 inverse_vocab = {i: word for word, i in vocab.items()}
 #Maximum length to avoid infinite loops
 max_length=100
-max_repeat=2 # Maximum allowed repeat length
+max_repeat=2
+repetition_penalty = 0.9 # Testing how it handles this
 
 while True:
     input_text = input("Human: ")
@@ -32,7 +33,7 @@ while True:
     #Convert numericalized input to tensor and add batch dimension
     input_tensor = torch.tensor(numericalized, dtype=torch.int64).unsqueeze(0).to(device)
     predicted_words = []
-    temperature = .4
+    temperature = .5
     #Get input and generate
     for _ in range(max_length):
         #Forward pass through the model
@@ -42,14 +43,14 @@ while True:
         #Convert scaled logits to probabilities
         probabilities = F.softmax(scaled_output[0], dim=-1)
         probabilities = probabilities[:len(vocab)]
-        #Sample from these probabilities to get our predicted text
-        predicted_index = torch.multinomial(probabilities, num_samples=1).item()
-        #convert index to word and add it to our list of predicted words
+        # Apply Repetition Penalty to the probabilities
+        for i, word in enumerate(predicted_words[-max_repeat:]):
+            word_index = vocab[word]
+            probabilities[word_index] *= repetition_penalty ** (max_repeat - i)
+        predicted_index = torch.multinomial(probabilities, num_samples=1).item() #Sample from these probabilities to get our predicted text
+        # Convert index to word and add it to our list of predicted words
         predicted_word = inverse_vocab[predicted_index]
         predicted_words.append(predicted_word)
-        #Check if the predicted word is a punctuation mark.
-        if predicted_words[-max_repeat:].count(predicted_word) == max_repeat:
-            break
         #Add the predicted index to our input tensor for the next round
         input_tensor = torch.cat([input_tensor, torch.tensor([[predicted_index]],
                                                             dtype=torch.int64)], dim=1)
