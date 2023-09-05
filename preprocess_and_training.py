@@ -14,6 +14,7 @@ from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from torch.nn.utils.rnn import pad_sequence
+from Convert_csv_to_JSONl import calculate_max_sentence_length
 
 nltk.download('punkt')
 
@@ -77,9 +78,12 @@ validation_padded = pad_sequence(validation_sequences, batch_first=True)
 #print("Shape of test_padded:", test_padded.shape)
 #print("Shape of validation_padded:", validation_padded.shape)
 
+# Get the max sentence length on the dataset. This should in theory save resources.
+max_length_data = calculate_max_sentence_length('testing-dataset.jsonl')
+
 # Positional encoding because transformers have no notion of position for the embeddings
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=2048):
+    def __init__(self, d_model, dropout=0.1, max_len=max_length_data):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
         pe = torch.zeros(max_len, d_model)
