@@ -42,7 +42,7 @@ while True:
         scaled_output = output/temperature
         #Convert scaled logits to probabilities
         probabilities = F.softmax(scaled_output[0], dim=-1)
-        probabilities = probabilities[:len(vocab)]
+        probabilities = probabilities[:len(vocab)] # IIRC its so it doesn't go outside the vocabulary size
         # Apply Repetition Penalty to the probabilities
         for i, word in enumerate(predicted_words[-max_repeat:]):
             word_index = vocab[word]

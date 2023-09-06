@@ -163,7 +163,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     # Defining shit ig
     torch.manual_seed(42)
     # Set number of Epochs
-    epochs = 125
+    epochs = 155
 
     #Empty loss lists to track values
     train_loss_values = []
