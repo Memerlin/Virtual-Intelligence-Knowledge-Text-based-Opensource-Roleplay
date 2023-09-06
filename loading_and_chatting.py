@@ -13,7 +13,7 @@ device = torch.device('cpu')
 print(f'Vocab size: {len(vocab)}')
 
 # Load Model Architecture
-model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=2, nlayers=5,device = device) # Make sure these fit the args at preprocess_and_training.py
+model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=5, nlayers=5,device = device) # Make sure these fit the args at preprocess_and_training.py
 VIKTOR = 'Viktor_epoch_150.pth' #Set the model name or the path
 #Load the saved parameters
 model.load_state_dict(torch.load(VIKTOR, map_location=device))
@@ -22,7 +22,7 @@ inverse_vocab = {i: word for word, i in vocab.items()}
 #Maximum length to avoid infinite loops
 max_length=100
 max_repeat=10
-repetition_penalty = 0.5 # Testing how it handles this
+repetition_penalty = 0.7 # Testing how it handles this
 
 while True:
     input_text = input("Human: ")
@@ -33,7 +33,7 @@ while True:
     #Convert numericalized input to tensor and add batch dimension
     input_tensor = torch.tensor(numericalized, dtype=torch.int64).unsqueeze(0).to(device)
     predicted_words = []
-    temperature = .1
+    temperature = .5
     #Get input and generate
     for _ in range(max_length):
         #Forward pass through the model

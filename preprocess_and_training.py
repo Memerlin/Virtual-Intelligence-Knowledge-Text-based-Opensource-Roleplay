@@ -137,7 +137,7 @@ class TransformerModel(nn.Module):
 
 
 # Instatiate the model
-model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=2, nlayers=5,device = device)
+model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=5, nlayers=5,device = device)
 def init_weights(module):
     if type(module) == nn.Linear:
         torch.nn.init.xavier_uniform_(module.weight)
