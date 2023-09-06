@@ -20,10 +20,13 @@ nltk.download('punkt')
 
 device = torch.device("cpu")
 
-data = pd.read_json('testing-dataset.jsonl', lines=True)
+data = pd.read_json('training-data2.jsonl', lines=True)
 # Tokenize 'text' column and store result as a separate variable
-tokenized_text = data['text'].apply(lambda x:
+input_tokenize = data['input'].apply(lambda x:
                             word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
+output_tokenize = data['output'].apply(lambda x:
+                            word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
+tokenized_text = input_tokenize + output_tokenize
 
 # Add this to new dataframe column
 data['tokenized_text'] = tokenized_text
