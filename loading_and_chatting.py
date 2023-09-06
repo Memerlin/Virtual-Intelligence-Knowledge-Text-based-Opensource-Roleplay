@@ -22,8 +22,9 @@ inverse_vocab = {i: word for word, i in vocab.items()}
 #Maximum length to avoid infinite loops
 max_length=100
 max_repeat=10
-repetition_penalty = 0.7 # Testing how it handles this
-
+repetition_penalty = 2 # Testing how it handles this. Sept. 6: Turns out the value has to be GREATER than one. Maybe this is why he was looping so badly.
+beam_width = 5 #Initialize beam width, basically how many "predictions" it does at the same time. Only the best will be kept
+temperature = 1.5
 while True:
     input_text = input("Human: ")
     if input_text.lower() == 'quit':
@@ -32,29 +33,34 @@ while True:
     numericalized = [vocab[token] if token in vocab else vocab["<UNK>"] for token in tokens]
     #Convert numericalized input to tensor and add batch dimension
     input_tensor = torch.tensor(numericalized, dtype=torch.int64).unsqueeze(0).to(device)
+    candidates = [(input_tensor, 0)]
     predicted_words = []
-    temperature = .5
+
     #Get input and generate
     for _ in range(max_length):
-        #Forward pass through the model
-        output = model(input_tensor)
-        #Apply temperature scaling to output logits
-        scaled_output = output/temperature
-        #Convert scaled logits to probabilities
-        probabilities = F.softmax(scaled_output[0], dim=-1)
-        probabilities = probabilities[:len(vocab)] # IIRC its so it doesn't go outside the vocabulary size
-        # Apply Repetition Penalty to the probabilities
-        for i, word in enumerate(predicted_words[-max_repeat:]):
-            word_index = vocab[word]
-            probabilities[word_index] *= repetition_penalty ** (max_repeat - i)
-        predicted_index = torch.multinomial(probabilities, num_samples=1).item() #Sample from these probabilities to get our predicted text
-        # Convert index to word and add it to our list of predicted words
-        predicted_word = inverse_vocab[predicted_index]
-        predicted_words.append(predicted_word)
-        #Add the predicted index to our input tensor for the next round
-        input_tensor = torch.cat([input_tensor, torch.tensor([[predicted_index]],
-                                                            dtype=torch.int64)], dim=1)
-        # Check if predicted word is <eos> token, and stop if it is.
-        if predicted_word == "<eos>":
+        next_candidates = []
+        for candidate, score in candidates:
+            output = model(candidate) 
+            scaled_output = output/temperature #Apply temperature scaling to output logits
+            probabilities = F.softmax(scaled_output[0], dim=-1) #Convert scaled logits to probabilities
+            probabilities = probabilities[:len(vocab)] # IIRC its so it doesn't go outside the vocabulary size
+            # Apply Repetition Penalty to the probabilities (from position 2 to avoid the currently predicted word and start token)
+            for word_idx in set(candidate.view(-1).tolist()[2:]):
+                probabilities[word_idx] *= repetition_penalty
+                #Chose top probabilities
+                top_probs, top_idxs = torch.topk(probabilities, beam_width)
+                for i in range(beam_width):
+                    next_candidate = torch.cat([candidate, top_idxs[i].unsqueeze(0).unsqueeze(0)], dim=1)
+                    next_score = score - torch.log(top_probs[i]) # Convert to log-probability to avoid underflow
+                    next_candidates.append((next_candidate, next_score))
+                # Keep the top-k candidate sequences
+                next_candidates.sort(key=lambda x: x[1], reverse=True)
+                candidates = next_candidates[:beam_width] # Sort by score, not length
+                candidates = next_candidates[:beam_width]
+            #Select best candidates
+            best_candidate = candidates[0][0]
+            # Decode best seen sequence to words
+            predicted_words = [inverse_vocab[int(idx)] for idx in best_candidate[0]]
+        if predicted_words == "<eos>":
             break
     print('Viktor:' + ' '.join(predicted_words))
