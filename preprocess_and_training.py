@@ -140,7 +140,7 @@ class TransformerModel(nn.Module):
 
 
 # Instatiate the model
-model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=5, nlayers=5,device = device)
+model = TransformerModel(len(vocab), embedding_size=50, nhid=128, nhead=5, nlayers=5,device = device)
 def init_weights(module):
     if type(module) == nn.Linear:
         torch.nn.init.xavier_uniform_(module.weight)
@@ -161,12 +161,12 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     #Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     #scheduler
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=.99)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=.99)
 
     # Defining shit ig
     torch.manual_seed(42)
     # Set number of Epochs
-    epochs = 155
+    epochs = 170
 
     #Empty loss lists to track values
     train_loss_values = []
