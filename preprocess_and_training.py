@@ -21,6 +21,8 @@ nltk.download('punkt')
 device = torch.device("cpu")
 
 data = pd.read_json('training-data2.jsonl', lines=True)
+#Suffling dataset
+data = data.sample(frac=1, random_state=42).reset_index(drop=True)
 # Tokenize 'text' column and store result as a separate variable
 input_tokenize = data['input'].apply(lambda x:
                             word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
@@ -140,7 +142,7 @@ class TransformerModel(nn.Module):
 
 
 # Instatiate the model
-model = TransformerModel(len(vocab), embedding_size=50, nhid=128, nhead=5, nlayers=5,device = device)
+model = TransformerModel(len(vocab), embedding_size=60, nhid=128, nhead=5, nlayers=5,device = device)
 def init_weights(module):
     if type(module) == nn.Linear:
         torch.nn.init.xavier_uniform_(module.weight)
@@ -161,12 +163,12 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     #Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     #scheduler
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=.99)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=.99)
 
     # Defining shit ig
     torch.manual_seed(42)
     # Set number of Epochs
-    epochs = 170
+    epochs = 210
 
     #Empty loss lists to track values
     train_loss_values = []
