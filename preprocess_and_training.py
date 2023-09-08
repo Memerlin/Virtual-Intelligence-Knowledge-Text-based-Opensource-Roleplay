@@ -11,12 +11,14 @@ import pickle
 import math
 
 from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from torch.nn.utils.rnn import pad_sequence
 from Convert_csv_to_JSONl import calculate_max_sentence_length
 from torch.utils.data import DataLoader
 nltk.download('punkt')
+nltk.download('stopwords')
 
 device = torch.device("cpu")
 
@@ -62,6 +64,11 @@ vocab['<UNK>'] = len(vocab)
 train_sequences = [[vocab[word] for word in seq] for seq in train_data['tokenized_text']]
 test_sequences = [[vocab.get(word, vocab['<UNK>']) for word in seq] for seq in test_data['tokenized_text']]
 validation_sequences = [[vocab.get(word, vocab['<UNK>']) for word in seq] for seq in validation_data['tokenized_text']]
+
+#Defining stopwords
+stop_words = set(stopwords.words('english'))
+#These need to be tensors too
+stop_words_ids = torch.tensor([vocab.get(word, vocab["<UNK>"]) for word in stop_words])
 
 # Save vocab
 with open('vocab.pkl', 'wb') as f:
@@ -161,11 +168,11 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     #Loss Function
     loss_fn = nn.CrossEntropyLoss(ignore_index=vocab["<UNK>"], reduction="mean")
     #Optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     #scheduler
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=.99)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=.99)
     #Set up mini-batches so memory isn't that much of a constraint
-    accumulation_steps = 10
+    accumulation_steps = 16
     batch_size = 16
     train_data_loader = DataLoader(train_padded, batch_size = 16, shuffle=True)
 
@@ -178,9 +185,9 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     test_loss_values = []
     epoch_count = []
     val_loss_values = []
+    model.train()
 
     for epoch in range(epochs):
-        model.train()
         for batch_i, train_batch in enumerate(train_data_loader):
             train_batch = train_batch.to(device)
             device = torch.device('cpu')
@@ -191,6 +198,13 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
             train_labels_shifted_left = torch.cat([train_batch[:, 1:], torch.zeros((train_batch.shape[0],1), dtype=torch.long)], dim=-1)
             #print(f'train labels shifted left shape: {train_labels_shifted_left.shape}')
             loss_val = loss_fn(output_train.view(-1, len(vocab)), train_labels_shifted_left.view(-1))
+            # Repetition penalty
+            _, predicted_tokens = torch.max(output_train, dim=-1)
+            non_stopword_predicted_tokens = [token for token in predicted_tokens if token.item() not in stop_words_ids]
+            unique_tokens = torch.unique(torch.tensor(non_stopword_predicted_tokens))
+            repetition_penalty = len(non_stopword_predicted_tokens) / len(unique_tokens) if len(unique_tokens) > 0 else 1.0
+            # Add rep pen to the loss
+            loss_val += repetition_penalty
             for name, param in model.named_parameters():
                 if torch.isnan(param).any():
                     print(f'{name} contains NaN values')
@@ -207,19 +221,19 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
                 optimizer.step()
                 scheduler.step()
-            if epoch %5 ==0:
-                print(f'Epoch {epoch}, Loss {loss_val.item()}')
-                torch.save(model.state_dict(), f'Viktor_epoch_{epoch}.pth')
+        if epoch %5 ==0:
+            print(f'Epoch {epoch}, Loss {loss_val.item()}')
+            torch.save(model.state_dict(), f'Viktor_epoch_{epoch}.pth')
                 #Evaluation on validation set
-                with torch.no_grad():
-                    model.to(device)
-                    validation_padded = validation_padded.to(device)
-                    model.eval()
-                    val_output = model(validation_padded)
-                    val_labels_shifted_left = torch.cat((validation_padded[:,1:], torch.zeros((validation_padded.shape[0], 1), dtype=torch.long)), dim=-1)
-                    val_loss = loss_fn(val_output.view(-1, len(vocab)), val_labels_shifted_left.view(-1))
-                    print(f'Validation Loss in epoch {epoch}: {val_loss.item()}')
-                    val_loss_values.append(val_loss.item())
+            with torch.no_grad():
+                model.to(device)
+                validation_padded = validation_padded.to(device)
+                model.eval()
+                val_output = model(validation_padded)
+                val_labels_shifted_left = torch.cat((validation_padded[:,1:], torch.zeros((validation_padded.shape[0], 1), dtype=torch.long)), dim=-1)
+                val_loss = loss_fn(val_output.view(-1, len(vocab)), val_labels_shifted_left.view(-1))
+                print(f'Validation Loss in epoch {epoch}: {val_loss.item()}')
+                val_loss_values.append(val_loss.item())
     # Testing After training
     model.eval()
     with torch.no_grad():
