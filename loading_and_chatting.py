@@ -13,19 +13,18 @@ device = torch.device('cpu')
 print(f'Vocab size: {len(vocab)}')
 
 # Load Model Architecture
-model = TransformerModel(len(vocab), embedding_size=60, nhid=128, nhead=5, nlayers=5,device = device) # Make sure these fit the args at preprocess_and_training.py
-VIKTOR = 'Viktor_epoch_140.pth' #Set the model name or the path
+model = TransformerModel(len(vocab), embedding_size=50, nhid=128, nhead=5, nlayers=5,device = device) # Make sure these fit the args at preprocess_and_training.py
+VIKTOR = 'Viktor_epoch_165.pth' #Set the model name or the path
 #Load the saved parameters
 model.load_state_dict(torch.load(VIKTOR, map_location=device))
-model.eval()
 #No idea why I need this below or why it needs to be inverse, but the predicted_words need it
 inverse_vocab = {i: word for word, i in vocab.items()}
 #Maximum length to avoid infinite loops
-max_length=100
+max_length=10
 max_repeat=2
-repetition_penalty = 1.2 # Testing how it handles this. Sept. 6: Turns out the value has to be GREATER than one. Maybe this is why he was looping so badly.
+repetition_penalty = 2 # Testing how it handles this. Sept. 6: Turns out the value has to be GREATER than one. Maybe this is why he was looping so badly.
 beam_width = 5 #Initialize beam width, basically how many "predictions" it does at the same time. Only the best will be kept
-temperature = 1.0
+temperature = 1.7
 while True:
     input_text = input("Human: ")
     if input_text.lower() == 'quit':
