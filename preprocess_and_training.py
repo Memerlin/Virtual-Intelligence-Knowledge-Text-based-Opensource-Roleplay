@@ -207,19 +207,19 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
                 optimizer.step()
                 scheduler.step()
-            if epoch %5 ==0:
-                print(f'Epoch {epoch}, Loss {loss_val.item()}')
-                torch.save(model.state_dict(), f'Viktor_epoch_{epoch}.pth')
-                #Evaluation on validation set
-                with torch.no_grad():
-                    model.to(device)
-                    validation_padded = validation_padded.to(device)
-                    model.eval()
-                    val_output = model(validation_padded)
-                    val_labels_shifted_left = torch.cat((validation_padded[:,1:], torch.zeros((validation_padded.shape[0], 1), dtype=torch.long)), dim=-1)
-                    val_loss = loss_fn(val_output.view(-1, len(vocab)), val_labels_shifted_left.view(-1))
-                    print(f'Validation Loss in epoch {epoch}: {val_loss.item()}')
-                    val_loss_values.append(val_loss.item())
+        if epoch %5 ==0:
+            print(f'Epoch {epoch}, Loss {loss_val.item()}')
+            torch.save(model.state_dict(), f'Viktor_epoch_{epoch}.pth')
+            #Evaluation on validation set
+            with torch.no_grad():
+                model.to(device)
+                validation_padded = validation_padded.to(device)
+                model.eval()
+                val_output = model(validation_padded)
+                val_labels_shifted_left = torch.cat((validation_padded[:,1:], torch.zeros((validation_padded.shape[0], 1), dtype=torch.long)), dim=-1)
+                val_loss = loss_fn(val_output.view(-1, len(vocab)), val_labels_shifted_left.view(-1))
+                print(f'Validation Loss in epoch {epoch}: {val_loss.item()}')
+                val_loss_values.append(val_loss.item())
     # Testing After training
     model.eval()
     with torch.no_grad():
