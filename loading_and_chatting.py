@@ -13,8 +13,8 @@ device = torch.device('cpu')
 print(f'Vocab size: {len(vocab)}')
 
 # Load Model Architecture
-model = TransformerModel(len(vocab), embedding_size=50, nhid=128, nhead=5, nlayers=5,device = device) # Make sure these fit the args at preprocess_and_training.py
-VIKTOR = 'Viktor_epoch_165.pth' #Set the model name or the path
+model = TransformerModel(len(vocab), embedding_size=60, nhid=128, nhead=5, nlayers=5,device = device) # Make sure these fit the args at preprocess_and_training.py
+VIKTOR = 'Viktor_epoch_60.pth' #Set the model name or the path
 #Load the saved parameters
 model.load_state_dict(torch.load(VIKTOR, map_location=device))
 #No idea why I need this below or why it needs to be inverse, but the predicted_words need it
