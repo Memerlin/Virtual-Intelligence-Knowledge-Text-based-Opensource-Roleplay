@@ -1,22 +1,28 @@
 import pandas as pd
+
 from nltk.tokenize import word_tokenize
+
 if __name__ == "__main__":
-    # Load the CSV data into a DataFrame
-    df = pd.read_csv('training-data2.csv', header=0)
+    # load DataFrame
+    df = pd.read_pickle('new_format_training_data.pkl')
+    list(df.columns)
     #Making sure everything is a string
-    df['input'] = df['input'].astype(str)
-    df['output'] = df['output'].astype(str)
-    df[['input', 'output']] = df[['input', 'output']].applymap(lambda x: x + '{} <eos>'.format(x)) #Turns out I actually need an end of sentence token
-    # Convert the DataFrame to JSONL format
-    with open('training-data2.jsonl', 'w', encoding='utf-8') as f:
-        df.to_json(f, orient='records', lines=True, force_ascii=False, date_format='iso')
+    df['bot_name'] = df['bot_name'].astype(str)
+    df['bot_definitions'] = df['bot_definitions'].astype(str)
+    df['chat_examples'] = df['chat_examples'].astype(str)
+    df['bot_greeting'] = df['bot_greeting'].astype(str)
+    df['conversation'] = df['conversation'].astype(str)
 
 # Calculating the length of each sentence
 def calculate_max_sentence_length():
-    data = pd.read_json('training-data2.jsonl', lines=True, encoding='utf-8')
-    input_length = data['input'].apply(lambda x: len(word_tokenize(x)))
-    output_length = data['output'].apply(lambda x: len(word_tokenize(x)))
-    data['sentence_length'] = input_length + output_length
+    data = pd.read_pickle('new_format_training_data.pkl')
+    bot_name_length = data['bot_name'].apply(lambda x: len(word_tokenize(x)))
+    bot_definitions_length = data['bot_definitions'].apply(lambda x: len(word_tokenize(x)))
+    chat_examples_length = data['chat_examples'].apply(lambda x: len(word_tokenize(x)))
+    bot_greeting_length = data['bot_greeting'].apply(lambda x: len(word_tokenize(x)))
+    conversation_length = data['conversation'].apply(lambda x: len(word_tokenize(x)))
+    data['sentence_length'] = bot_name_length + bot_definitions_length + bot_greeting_length + conversation_length + chat_examples_length
     max_sentence_length = data['sentence_length'].max()
     return max_sentence_length
+
 print("Maximum sentence length is: ", calculate_max_sentence_length())

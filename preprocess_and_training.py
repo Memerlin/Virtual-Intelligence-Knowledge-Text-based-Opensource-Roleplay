@@ -20,16 +20,25 @@ nltk.download('punkt')
 
 device = torch.device("cpu")
 
-data = pd.read_json('training-data2.jsonl', lines=True)
+data = pd.read_pickle('new_format_training_data.pkl')
 #Suffling dataset
 data = data.sample(frac=1, random_state=42).reset_index(drop=True)
-# Tokenize 'text' column and store result as a separate variable
-input_tokenize = data['input'].apply(lambda x:
+# Tokenize columns and store result as a separate variable
+bot_name_tokenize = data['bot_name'].apply(lambda x:
                             word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
-output_tokenize = data['output'].apply(lambda x:
+bot_definitions_tokenize = data['bot_definitions'].apply(lambda x:
                             word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
-tokenized_text = input_tokenize + output_tokenize
+chat_examples_tokenize = data['chat_examples'].apply(lambda x:
+                            word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
+bot_greeting_tokenize = data['bot_greeting'].apply(lambda x:
+                            word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
+conversation_tokenize = data['conversation'].apply(lambda x:
+                            word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
+tokenized_text = bot_name_tokenize + bot_definitions_tokenize + chat_examples_tokenize + bot_greeting_tokenize + conversation_tokenize
 
+# Splitting it into multiples in the meantime
+data['conversation'] = data['conversation'].str.split('<eos>', expand=False)
+data['chat_examples'] = data['chat_examples'].str.split('<START>', expand=False)
 # Add this to new dataframe column
 data['tokenized_text'] = tokenized_text
 # print(data['tokenized_text'])
@@ -43,10 +52,10 @@ tfidf_matrix = vectorizer.fit_transform(joined_text)
 # print(f"Matrix shape: {tfidf_matrix.shape}")
 
 # Splitting the data into training and testing sets
-train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
+train_data, test_data = train_test_split(data, test_size=0.02, random_state=42)
 
 #Further split the training data into testing and validation sets
-train_data, validation_data = train_test_split(train_data, test_size=0.25, random_state=42)
+train_data, validation_data = train_test_split(train_data, test_size=0.025, random_state=42)
 
 #Print the sizes of the training and testing sets
 # print("Training set size:", len(train_data))
@@ -157,6 +166,7 @@ model.apply(init_weights)
 # Training the model!!
 total_params = sum(p.numel() for p in model.parameters())
 print(f'Total number of parameters: {total_params}')
+
 if __name__ == "__main__": # So the training doesn't run when I'm actually talking to him. it.
     #Loss Function
     loss_fn = nn.CrossEntropyLoss(ignore_index=vocab["<UNK>"], reduction="mean")
@@ -171,7 +181,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
 
     torch.manual_seed(42)
     # Set number of Epochs
-    epochs = 210
+    epochs = 65
 
     #Empty loss lists to track values
     train_loss_values = []
