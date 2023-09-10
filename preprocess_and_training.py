@@ -15,15 +15,20 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from torch.nn.utils.rnn import pad_sequence
 from Convert_csv_to_JSONl import calculate_max_sentence_length
-
+from torch.utils.data import DataLoader
 nltk.download('punkt')
 
 device = torch.device("cpu")
 
-data = pd.read_json('testing-dataset.jsonl', lines=True)
+data = pd.read_json('training-data2.jsonl', lines=True)
+#Suffling dataset
+data = data.sample(frac=1, random_state=42).reset_index(drop=True)
 # Tokenize 'text' column and store result as a separate variable
-tokenized_text = data['text'].apply(lambda x:
+input_tokenize = data['input'].apply(lambda x:
                             word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
+output_tokenize = data['output'].apply(lambda x:
+                            word_tokenize(str(x).replace('\n', ' ').replace('\r', '').replace('\u2026', '...')))
+tokenized_text = input_tokenize + output_tokenize
 
 # Add this to new dataframe column
 data['tokenized_text'] = tokenized_text
@@ -137,7 +142,7 @@ class TransformerModel(nn.Module):
 
 
 # Instatiate the model
-model = TransformerModel(len(vocab), embedding_size=50, nhid=2, nhead=2, nlayers=5,device = device)
+model = TransformerModel(len(vocab), embedding_size=60, nhid=128, nhead=5, nlayers=5,device = device)
 def init_weights(module):
     if type(module) == nn.Linear:
         torch.nn.init.xavier_uniform_(module.weight)
@@ -158,12 +163,15 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     #Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     #scheduler
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=.99)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=.99)
+    #Set up mini-batches so memory isn't that much of a constraint
+    accumulation_steps = 10
+    batch_size = 16
+    train_data_loader = DataLoader(train_padded, batch_size = 16, shuffle=True)
 
-    # Defining shit ig
     torch.manual_seed(42)
     # Set number of Epochs
-    epochs = 155
+    epochs = 210
 
     #Empty loss lists to track values
     train_loss_values = []
@@ -172,28 +180,33 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     val_loss_values = []
 
     for epoch in range(epochs):
-        device = torch.device('cpu')
-        model.to(device)
-        train_padded = train_padded.to(device)
-        # Forward pass, compute predictions and loss
-        output_train = model(train_padded)
-        output_train = output_train.view(output_train.shape[0], -1)
-        train_labels_shifted_left = torch.cat([train_padded[:, 1:], torch.zeros((train_padded.shape[0],1), dtype=torch.long)], dim=-1)
-    #    print(f'train labels shifted left shape: {train_labels_shifted_left.shape}')
-        loss_val = loss_fn(output_train.view(-1, len(vocab)), train_labels_shifted_left.view(-1))
-        for name, param in model.named_parameters():
-            if torch.isnan(param).any():
-                print(f'{name} contains NaN values')
-        # Backward pass an optimization
-        optimizer.zero_grad()
-        loss_val.backward()
-        for name, param in model.named_parameters():
-            if torch.isnan(param).any():
-                print(f'{name} contains NaN values')
-        # Clip gradients
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-        optimizer.step()
-        scheduler.step()
+        model.train()
+        for batch_i, train_batch in enumerate(train_data_loader):
+            train_batch = train_batch.to(device)
+            device = torch.device('cpu')
+            model.to(device)
+            # Forward pass, compute predictions and loss
+            output_train = model(train_batch)
+            output_train = output_train.view(output_train.shape[0], -1)
+            train_labels_shifted_left = torch.cat([train_batch[:, 1:], torch.zeros((train_batch.shape[0],1), dtype=torch.long)], dim=-1)
+            #print(f'train labels shifted left shape: {train_labels_shifted_left.shape}')
+            loss_val = loss_fn(output_train.view(-1, len(vocab)), train_labels_shifted_left.view(-1))
+            for name, param in model.named_parameters():
+                if torch.isnan(param).any():
+                    print(f'{name} contains NaN values')
+            # Backward pass an optimization
+            for batch_i, batch in enumerate(train_padded):
+                loss_val_norm = loss_val
+                loss_val_norm = loss_val / accumulation_steps # normalize our loss        
+            if (batch_i+1) % accumulation_steps == 0: #Wait for several backward steps
+                optimizer.zero_grad()
+                loss_val_norm.backward()# for name, param in model.named_parameters():
+                #if torch.isnan(param).any():
+                #    print(f'{name} contains NaN values')
+            # Clip gradients
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+                optimizer.step()
+                scheduler.step()
         if epoch %5 ==0:
             print(f'Epoch {epoch}, Loss {loss_val.item()}')
             torch.save(model.state_dict(), f'Viktor_epoch_{epoch}.pth')
