@@ -8,7 +8,7 @@ if __name__ == "__main__":
     df['output'] = df['output'].astype(str)
     df[['input', 'output']] = df[['input', 'output']].applymap(lambda x: x + '{} <eos>'.format(x)) #Turns out I actually need an end of sentence token
     # Convert the DataFrame to JSONL format
-    with open('training-data2.jsonl', 'w', encoding='utf-8') as f:
+    with open('training_data.jsonl', 'w', encoding='utf-8') as f:
         df.to_json(f, orient='records', lines=True, force_ascii=False, date_format='iso')
 
 # Calculating the length of each sentence
