@@ -197,13 +197,16 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
             for name, param in model.named_parameters():
                 if torch.isnan(param).any():
                     print(f'{name} contains NaN values')
-            # Forward pass and calculate loss
-            loss_val_norm = loss_val/accumulation_steps
-            total_loss += loss_val_norm
-            loss_val_norm.backward()
-        optimizer.zero_grad()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-        optimizer.step()
+            # Accumulate loss
+            total_loss += loss_val
+            # Backward pass for accumulation steps
+            if (batch_i + 1) % accumulation_steps == 0:
+                total_loss = total_loss / accumulation_steps
+                total_loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+                optimizer.step() # Update weights
+                optimizer.zero_grad() # Reset gradients for next batch
+                total_loss = 0 # Reset total loss for next accumulation step
         scheduler.step()
 # for name, param in model.named_parameters():
                     #if torch.isnan(param).any():
