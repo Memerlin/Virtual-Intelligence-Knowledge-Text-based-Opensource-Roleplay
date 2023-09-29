@@ -18,7 +18,7 @@ from Convert_csv_to_JSONl import calculate_max_sentence_length
 from torch.utils.data import DataLoader
 nltk.download('punkt')
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 data = pd.read_pickle('new_format_training_data.pkl')
 #Suffling dataset
