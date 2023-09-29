@@ -168,8 +168,8 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=.99)
     #Set up mini-batches so memory isn't that much of a constraint
     accumulation_steps = 10
-    batch_size = 8
-    train_data_loader = DataLoader(train_padded, batch_size = 8, shuffle=True)
+    batch_size = 4
+    train_data_loader = DataLoader(train_padded, batch_size = 4, shuffle=True)
 
     torch.manual_seed(42)
     # Set number of Epochs
