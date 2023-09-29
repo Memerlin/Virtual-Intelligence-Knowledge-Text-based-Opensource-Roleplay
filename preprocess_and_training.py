@@ -102,7 +102,7 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe',pe)
         self.scale = math.sqrt(d_model) # Normalization
     def forward(self, x):
-        x = x + self.pe[:x.size(0), :] * self.scale
+        x = x + self.pe[:x.size(1), :]
         return self.dropout(x)
 
 # Defining Transformer Model
