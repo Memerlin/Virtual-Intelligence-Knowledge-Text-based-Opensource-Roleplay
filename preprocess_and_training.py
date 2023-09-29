@@ -2,6 +2,7 @@
 import pandas as pd
 import json
 import nltk
+nltk.download('punkt')
 import sklearn
 import numpy as np
 import random
@@ -16,7 +17,7 @@ from sklearn.model_selection import train_test_split
 from torch.nn.utils.rnn import pad_sequence
 from Convert_csv_to_JSONl import calculate_max_sentence_length
 from torch.utils.data import DataLoader
-nltk.download('punkt')
+
 
 device = torch.device("cpu")
 
@@ -195,18 +196,18 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
                 if torch.isnan(param).any():
                     print(f'{name} contains NaN values')
             # Backward pass an optimization
-            for batch_i, batch in enumerate(train_padded):
+            for batch_i, batch in enumerate(train_data_loader):
                 loss_val_norm = loss_val
                 loss_val_norm = loss_val / accumulation_steps # normalize our loss        
-            if (batch_i+1) % accumulation_steps == 0: #Wait for several backward steps
-                optimizer.zero_grad()
+                if (batch_i+1) % accumulation_steps == 0: #Wait for several backward steps
+                    optimizer.zero_grad()
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+                    optimizer.step()
+                    scheduler.step()
                 loss_val_norm.backward()# for name, param in model.named_parameters():
-                #if torch.isnan(param).any():
-                #    print(f'{name} contains NaN values')
-            # Clip gradients
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-                optimizer.step()
-                scheduler.step()
+                    #if torch.isnan(param).any():
+                    #    print(f'{name} contains NaN values')
+                # Clip gradients
         if epoch %5 ==0:
             print(f'Epoch {epoch}, Loss {loss_val.item()}')
             torch.save(model.state_dict(), f'Viktor_epoch_{epoch}.pth')
