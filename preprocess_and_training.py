@@ -2,6 +2,7 @@
 import pandas as pd
 import json
 import nltk
+nltk.download('punkt')
 import sklearn
 import numpy as np
 import random
@@ -16,7 +17,6 @@ from sklearn.model_selection import train_test_split
 from torch.nn.utils.rnn import pad_sequence
 from Convert_csv_to_JSONl import calculate_max_sentence_length
 from torch.utils.data import DataLoader
-nltk.download('punkt')
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
