@@ -108,7 +108,7 @@ class PositionalEncoding(nn.Module):
 class TransformerModel(nn.Module):
     def __init__(self, vocab_size, embedding_size, nhead, nhid, nlayers,device):
         super(TransformerModel, self).__init__()
-        self.device='cpu'
+        self.device='cuda' if torch.cuda.is_available() else 'cpu'
         self.model_type = 'Transformer'
         self.src_mask = None
         self.pos_encoder = PositionalEncoding(embedding_size)
