@@ -65,8 +65,8 @@ test_sequences = [[vocab.get(word, vocab['<UNK>']) for word in seq] for seq in t
 validation_sequences = [[vocab.get(word, vocab['<UNK>']) for word in seq] for seq in validation_data['tokenized_text']]
 
 # Save vocab
-vocab_file = os.path.join('content/drive/MyDrive/Viktor', 'vocab.pkl')
-with open(vocab_file, 'w') as f:
+vocab_file = os.path.join('/content/drive/MyDrive/Viktor', 'vocab.pkl')
+with open(vocab_file, 'wb') as f:
     pickle.dump(vocab, f)
 print('Vocab saved')
 
@@ -212,7 +212,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
         if epoch %5 ==0:
             print(f'Epoch {epoch}, Loss {loss_val.item()}')
             model_save_name = f'Viktor_epoch_{epoch}.pth'
-            path = f"content/drive/MyDrive/Viktor/models/{model_save_name}"
+            path = f"/content/drive/MyDrive/Viktor/models/{model_save_name}"
             torch.save(model.state_dict(), path)
             #Evaluation on validation set
             with torch.no_grad():
