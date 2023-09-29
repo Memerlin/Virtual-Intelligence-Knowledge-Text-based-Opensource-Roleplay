@@ -19,7 +19,7 @@ from Convert_csv_to_JSONl import calculate_max_sentence_length
 from torch.utils.data import DataLoader
 
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 data = pd.read_json('training-data2.jsonl', lines=True)
 #Suffling dataset
