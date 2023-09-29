@@ -207,7 +207,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
                 optimizer.step() # Update weights
                 optimizer.zero_grad() # Reset gradients for next batch
                 total_loss = 0 # Reset total loss for next accumulation step
-                del train_batch, output_train, train_labels_shifted_left, loss_val # Delete tensors to free up memory
+        del train_batch, output_train, train_labels_shifted_left, loss_val # Delete tensors to free up memory
         scheduler.step()
 # for name, param in model.named_parameters():
                     #if torch.isnan(param).any():
