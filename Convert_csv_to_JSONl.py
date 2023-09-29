@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
 # Calculating the length of each sentence
 def calculate_max_sentence_length():
-    data = pd.read_json('training-data2.jsonl', lines=True, encoding='utf-8')
+    data = pd.read_json('training_data.jsonl', lines=True, encoding='utf-8')
     input_length = data['input'].apply(lambda x: len(word_tokenize(x)))
     output_length = data['output'].apply(lambda x: len(word_tokenize(x)))
     data['sentence_length'] = input_length + output_length
