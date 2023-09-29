@@ -66,7 +66,7 @@ validation_sequences = [[vocab.get(word, vocab['<UNK>']) for word in seq] for se
 
 # Save vocab
 vocab_file = os.path.join('content/drive/MyDrive/Viktor', 'vocab.pkl')
-with open(vocab_file, 'wb') as f:
+with open(vocab_file, 'w') as f:
     pickle.dump(vocab, f)
 print('Vocab saved')
 
