@@ -185,7 +185,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
         model.train()
         for batch_i, train_batch in enumerate(train_data_loader):
             train_batch = train_batch.to(device)
-            device = torch.device('cpu')
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             model.to(device)
             # Forward pass, compute predictions and loss
             output_train = model(train_batch)
