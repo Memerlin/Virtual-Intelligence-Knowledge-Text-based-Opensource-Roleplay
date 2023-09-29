@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-data = pd.read_json('training-data2.jsonl', lines=True)
+data = pd.read_json('training_data.jsonl', lines=True)
 #Suffling dataset
 data = data.sample(frac=1, random_state=42).reset_index(drop=True)
 # Tokenize 'text' column and store result as a separate variable
