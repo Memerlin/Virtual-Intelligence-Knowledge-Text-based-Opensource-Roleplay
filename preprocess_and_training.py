@@ -169,7 +169,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     #Set up mini-batches so memory isn't that much of a constraint
     accumulation_steps = 10
     batch_size = 16
-    train_data_loader = DataLoader(train_padded, batch_size = 16, shuffle=True)
+    train_data_loader = DataLoader(train_padded, batch_size = 8, shuffle=True)
 
     torch.manual_seed(42)
     # Set number of Epochs
