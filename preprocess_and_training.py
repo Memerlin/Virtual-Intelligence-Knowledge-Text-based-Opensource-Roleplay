@@ -168,7 +168,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=.99)
     #Set up mini-batches so memory isn't that much of a constraint
     accumulation_steps = 10
-    batch_size = 16
+    batch_size = 8
     train_data_loader = DataLoader(train_padded, batch_size = 8, shuffle=True)
 
     torch.manual_seed(42)
@@ -183,6 +183,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
 
     for epoch in range(epochs):
         model.train()
+        total_loss = 0
         for batch_i, train_batch in enumerate(train_data_loader):
             train_batch = train_batch.to(device)
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -196,16 +197,15 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
             for name, param in model.named_parameters():
                 if torch.isnan(param).any():
                     print(f'{name} contains NaN values')
-            # Backward pass an optimization
-            for batch_i, batch in enumerate(train_data_loader):
-                loss_val_norm = loss_val
-                loss_val_norm = loss_val / accumulation_steps # normalize our loss        
-                if (batch_i+1) % accumulation_steps == 0: #Wait for several backward steps
-                    optimizer.zero_grad()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-                    optimizer.step()
-                    scheduler.step()
-                loss_val_norm.backward()# for name, param in model.named_parameters():
+            # Forward pass and calculate loss
+            loss_val_norm = loss_val/accumulation_steps
+            total_loss += loss_val_norm
+            loss_val_norm.backward()
+        optimizer.zero_grad()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+        optimizer.step()
+        scheduler.step()
+# for name, param in model.named_parameters():
                     #if torch.isnan(param).any():
                     #    print(f'{name} contains NaN values')
                 # Clip gradients
