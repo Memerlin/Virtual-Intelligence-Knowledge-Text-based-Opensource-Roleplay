@@ -190,7 +190,7 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
             # Forward pass, compute predictions and loss
             output_train = model(train_batch)
             output_train = output_train.view(output_train.shape[0], -1)
-            train_labels_shifted_left = torch.cat([train_batch[:, 1:], torch.zeros((train_batch.shape[0],1), dtype=torch.long)], dim=-1)
+            train_labels_shifted_left = torch.cat([train_batch[:, 1:], torch.zeros((train_batch.shape[0],1), dtype=torch.long).to(device)], dim=-1)
             #print(f'train labels shifted left shape: {train_labels_shifted_left.shape}')
             loss_val = loss_fn(output_train.view(-1, len(vocab)), train_labels_shifted_left.view(-1))
             for name, param in model.named_parameters():
