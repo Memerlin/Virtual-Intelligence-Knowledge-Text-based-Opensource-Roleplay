@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import pickle
 import math
+import os
 
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -17,7 +18,6 @@ from sklearn.model_selection import train_test_split
 from torch.nn.utils.rnn import pad_sequence
 from Convert_csv_to_JSONl import calculate_max_sentence_length
 from torch.utils.data import DataLoader
-
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -65,7 +65,8 @@ test_sequences = [[vocab.get(word, vocab['<UNK>']) for word in seq] for seq in t
 validation_sequences = [[vocab.get(word, vocab['<UNK>']) for word in seq] for seq in validation_data['tokenized_text']]
 
 # Save vocab
-with open('content/drive/myDrive/Viktor/vocab.pkl', 'wb') as f:
+vocab_file = os.path.join('content/drive/MyDrive/Viktor', 'vocab.pkl')
+with open(vocab_file, 'wb') as f:
     pickle.dump(vocab, f)
 print('Vocab saved')
 
@@ -210,7 +211,9 @@ if __name__ == "__main__": # So the training doesn't run when I'm actually talki
                 # Clip gradients
         if epoch %5 ==0:
             print(f'Epoch {epoch}, Loss {loss_val.item()}')
-            torch.save(model.state_dict(), f'content/drive/myDrive/Viktor/Viktor_epoch_{epoch}.pth')
+            model_save_name = f'Viktor_epoch_{epoch}.pth'
+            path = f"content/drive/MyDrive/Viktor/models/{model_save_name}"
+            torch.save(model.state_dict(), path)
             #Evaluation on validation set
             with torch.no_grad():
                 model.to(device)
